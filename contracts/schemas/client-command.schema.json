@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/0.1/client-command.schema.json",
+  "title": "ClientCommand",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "commandId", "sessionId", "type", "arguments"],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "commandId": { "type": "string", "pattern": "^cmd_[A-Za-z0-9._-]{8,64}$" },
+    "sessionId": { "type": "string", "pattern": "^s_[A-Za-z0-9._-]{8,64}$" },
+    "type": {
+      "type": "string",
+      "enum": [
+        "session.open",
+        "input.send",
+        "approval.grant",
+        "approval.revoke",
+        "task.cancel",
+        "memory.confirm",
+        "memory.delete",
+        "events.since"
+      ]
+    },
+    "arguments": { "type": "object" }
+  }
+}

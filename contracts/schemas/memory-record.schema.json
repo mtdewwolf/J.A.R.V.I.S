@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/0.1/memory-record.schema.json",
+  "title": "MemoryRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "memoryId", "ownerId", "scope", "key", "epistemicStatus", "sourceRefs", "createdAt", "retentionDays", "supersededBy"],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "memoryId": { "type": "string", "pattern": "^mem_[A-Za-z0-9._-]{8,64}$" },
+    "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "key": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "valueType": { "enum": ["text", "number", "boolean", "json"] },
+    "epistemicStatus": { "enum": ["confirmed", "inferred", "uncertain"] },
+    "sourceRefs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "confirmedAt": { "type": ["string", "null"], "format": "date-time" },
+    "retentionDays": { "type": "integer", "minimum": 1, "maximum": 30 },
+    "supersededBy": { "type": ["string", "null"], "pattern": "^mem_[A-Za-z0-9._-]{8,64}$" }
+  }
+}

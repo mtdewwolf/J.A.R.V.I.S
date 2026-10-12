@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/0.1/permission-grant.schema.json",
+  "title": "PermissionGrant",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "grantId",
+    "ownerId",
+    "sessionId",
+    "taskId",
+    "generationId",
+    "proposalId",
+    "tool",
+    "toolVersion",
+    "argumentsDigest",
+    "digestCanonicalization",
+    "resourceScope",
+    "policyVersion",
+    "expiresAt",
+    "maxUses"
+  ],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "grantId": { "type": "string", "pattern": "^grt_[A-Za-z0-9._-]{8,64}$" },
+    "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sessionId": { "type": "string", "pattern": "^s_[A-Za-z0-9._-]{8,64}$" },
+    "taskId": { "type": "string", "pattern": "^tsk_[A-Za-z0-9._-]{8,64}$" },
+    "generationId": { "type": "string", "pattern": "^g_[A-Za-z0-9._-]{8,64}$" },
+    "proposalId": { "type": "string", "pattern": "^prp_[A-Za-z0-9._-]{8,64}$" },
+    "tool": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "toolVersion": { "type": "integer", "minimum": 1 },
+    "argumentsDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "digestCanonicalization": { "const": "RFC8785" },
+    "resourceScope": { "type": "string", "maxLength": 512 },
+    "policyVersion": { "type": "integer", "minimum": 1 },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "maxUses": { "const": 1 },
+    "state": { "enum": ["pending", "consumed", "revoked", "expired"] },
+    "consumedAt": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

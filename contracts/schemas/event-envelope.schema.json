@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/0.1/event-envelope.schema.json",
+  "title": "EventEnvelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "eventId", "cursor", "occurredAt", "sessionId", "type", "payload"],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "eventId": { "type": "string", "pattern": "^evt_[A-Za-z0-9._-]{8,64}$" },
+    "cursor": { "type": "integer", "minimum": 0 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "sessionId": { "type": "string", "pattern": "^s_[A-Za-z0-9._-]{8,64}$" },
+    "type": {
+      "type": "string",
+      "enum": [
+        "input.accepted",
+        "task.state_changed",
+        "tool.proposed",
+        "tool.dispatched",
+        "tool.result",
+        "memory.candidate",
+        "memory.confirmed",
+        "response.started",
+        "response.delta",
+        "response.committed",
+        "degraded.notice",
+        "audit.notice"
+      ]
+    },
+    "payload": { "type": "object" }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/0.1/tool-proposal.schema.json",
+  "title": "ToolProposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "proposalId", "generationId", "tool", "toolVersion", "arguments", "argumentsDigest"],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "proposalId": { "type": "string", "pattern": "^prp_[A-Za-z0-9._-]{8,64}$" },
+    "generationId": { "type": "string", "pattern": "^g_[A-Za-z0-9._-]{8,64}$" },
+    "tool": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "toolVersion": { "type": "integer", "minimum": 1 },
+    "arguments": { "type": "object" },
+    "argumentsDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "riskTier": { "enum": ["R0", "R1", "R2", "R3", "R4"] },
+    "resourceScope": { "type": "string", "maxLength": 512 }
+  }
+}

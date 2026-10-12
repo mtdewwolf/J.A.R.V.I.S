@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/0.1/inference-event.schema.json",
+  "title": "InferenceEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "generationId", "type", "payload"],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "generationId": { "type": "string", "pattern": "^g_[A-Za-z0-9._-]{8,64}$" },
+    "type": {
+      "type": "string",
+      "enum": ["started", "content.delta", "tool_use.proposal", "usage", "completed", "aborted", "error"]
+    },
+    "payload": { "type": "object" }
+  }
+}
