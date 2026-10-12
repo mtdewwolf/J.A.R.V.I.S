@@ -33,7 +33,7 @@ verification this audit could not perform on 2026-10-11:
 | Verified locally | `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (1 pass), and `cargo build --workspace --locked` all pass on the pinned toolchain |
 | Bun | 1.4.3 installed and pinned (`gateway/package.json` engines, CI `oven-sh/setup-bun@v2`); `bun install`, `bun test` (2 pass) and a boot smoke test of the loopback gateway all pass |
 | Cargo.lock | Committed; dependency set limited to the ADR-0001/0002 baseline (Tokio, Axum, Serde, tracing) |
-| PostgreSQL client | Still absent; PR-2 prerequisite remains open |
+| PostgreSQL client | Still absent at system level; provisioned for development as a rootless PostgreSQL 18.4 cluster (port 5433, socket `/tmp/opencode`, trust auth, single OS user) built from community binaries, plus a `psql` client. Not a system service; see PR-2 notes. |
 | Docker / Podman | Still absent; PR-4 sandbox prerequisite remains open |
 | Model accounts | Still unverified; live qualification gate remains open |
 

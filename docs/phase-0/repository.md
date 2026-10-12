@@ -20,14 +20,19 @@ microservices.
 │   │   └── src/                  # plumbing, not authority.
 │   │       ├── main.rs
 │   │       ├── limits.rs         # documented default constraints + unit test
+│   │       ├── store.rs          # pool, migrations, ssl policy
+│   │       ├── commands.rs       # idempotent ingestion (AC-05)
+│   │       ├── events.rs         # content-free events, replay cursor
+│   │       ├── tasks.rs          # CAS state machine, steps, execution intent
+│   │       ├── leases.rs         # single-worker lease, monotonic fencing
+│   │       ├── recovery.rs       # restart sweep (AC-17–AC-19, AC-23)
 │   │       ├── conversation.rs   # input context, generation, continuation
-│   │       ├── task.rs           # state machine, leases, fences, retries
 │   │       ├── policy.rs         # grants, revocations, dispatch checks
 │   │       ├── tools/
 │   │       │   ├── mod.rs        # registry: versioned schema + limits
 │   │       │   └── workspace_read_text.rs  # bounded R1 read, race-resistant open
 │   │       ├── memory.rs         # candidate/confirm, retrieval, supersession
-│   │       ├── events.rs         # event store access, checkpoints, cursor
+│   │       ├── event_store.rs    # event store access, checkpoints, cursor
 │   │       └── client_protocol.rs# authenticated commands, replay cursor
 │   └── jarvis-cli/               # authenticated local CLI client
 │       ├── Cargo.toml
@@ -42,6 +47,7 @@ microservices.
 │   ├── README.md
 │   └── schemas/                  # JSON Schema (draft 2020-12) payload files
 ├── migrations/                   # SQLx migrations: events, tasks, grants, memory
+│   └── 0001_init.sql
 ├── tests/
 │   └── acceptance/
 │       └── initial-slice.feature # Gherkin slice contracts (AC-01–AC-26, AC-28)
@@ -54,11 +60,13 @@ microservices.
 ├── README.md                     # project entry point
 ```
 
-Present as of PR-1: workspace manifests, toolchain pin, both crate skeletons,
-the gateway health skeleton, CI, contracts, docs, feature file, validator and
-LICENSE. Marked empty here for later PRs: `conversation.rs`–`client_protocol.rs`,
-`tools/`, `memory.rs`, `events.rs`, `gateway/src/providers/`, `migrations/`,
-`deploy/`.
+Present as of PR-2: workspace manifests, toolchain pin, crate skeletons with the
+durable slice (`store`, `commands`, `events`, `tasks`, `leases`, `recovery`,
+`limits`), `migrations/0001_init.sql`, the gateway health skeleton, CI (with a
+PostgreSQL service job), contracts, docs, feature file, validator and LICENSE.
+Marked empty here for later PRs: `conversation.rs`, `policy.rs`, `tools/`,
+`memory.rs`, `event_store.rs`, `client_protocol.rs`,
+`gateway/src/providers/`, `deploy/`.
 
 ## Layout rules
 
