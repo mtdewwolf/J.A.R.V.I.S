@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docs:
+    name: docs and contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/validate-phase0.mjs
+
+  rust:
+    name: rust core and cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the toolchain pinned by rust-toolchain.toml, including
+      # the components listed there.
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      # Clean-clone build against the committed lockfile (PR-1 exit criterion).
+      - run: cargo build --workspace --locked
+
+  gateway:
+    name: bun gateway
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.3"
+      - run: bun install --frozen-lockfile
+      - run: bun test

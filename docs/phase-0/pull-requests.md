@@ -13,6 +13,9 @@ the resulting assistant tool access — that requires the phased approval gates 
   `scripts/validate-phase0.mjs`. Closes the environment prerequisite recorded in
   [environment.md](environment.md) by *recording* the pins; CI supplies the
   toolchains.
+- **Status:** landed 2026-10-12. Toolchains were provisioned locally and the
+  fmt/clippy/test/locked-build sequence was recorded before committing; see
+  the Post-PR-1 provisioning addendum in [environment.md](environment.md).
 - **Out of scope:** application code, migrations, models.
 - **Exit criteria:** clean-clone build recorded; validator green in CI.
 - **Advances:** AC-28 (evidence pipeline only, via audit-ready CI artifacts).

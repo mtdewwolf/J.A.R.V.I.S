@@ -22,6 +22,24 @@ this environment until these prerequisites are provisioned and exercised.
 PR 1 must pin supported toolchains, lock dependencies and container images, and
 record an actual clean build. The architecture package does not install them.
 
+## Post-PR-1 provisioning (2026-10-12)
+
+PR 1 provisioned and pinned the two required toolchains and recorded the
+verification this audit could not perform on 2026-10-11:
+
+| Item | Observation |
+| --- | --- |
+| Rust / Cargo | `rustc`/`cargo` 1.99.0 installed via rustup (minimal profile, clippy, rustfmt); pinned in `rust-toolchain.toml`; auto-install verified when entering the repository |
+| Verified locally | `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (1 pass), and `cargo build --workspace --locked` all pass on the pinned toolchain |
+| Bun | 1.4.3 installed and pinned (`gateway/package.json` engines, CI `oven-sh/setup-bun@v2`); `bun install`, `bun test` (2 pass) and a boot smoke test of the loopback gateway all pass |
+| Cargo.lock | Committed; dependency set limited to the ADR-0001/0002 baseline (Tokio, Axum, Serde, tracing) |
+| PostgreSQL client | Still absent; PR-2 prerequisite remains open |
+| Docker / Podman | Still absent; PR-4 sandbox prerequisite remains open |
+| Model accounts | Still unverified; live qualification gate remains open |
+
+The gateway skeleton deliberately exposes no inference route, so no provider
+credentials were needed or used for this verification.
+
 ## Research tooling
 
 The provider-directory CLI was unavailable initially. A checksum-verified Stripe

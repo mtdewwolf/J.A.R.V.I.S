@@ -9,12 +9,17 @@ microservices.
 ```text
 .
 ├── Cargo.toml                    # workspace manifest; core + CLI crates only
-├── rust-toolchain.toml           # pinned toolchain (PR-1 prerequisite)
+├── Cargo.lock                    # committed; pinned dependency set
+├── rust-toolchain.toml           # pinned toolchain with clippy/rustfmt
+├── .github/workflows/ci.yml      # docs, Rust and gateway gates
+├── .gitignore
+├── LICENSE                        # MIT
 ├── crates/
 │   ├── jarvis-core/              # trusted core: owns authorization, dispatch,
 │   │   ├── Cargo.toml            # durable transitions. Axum HTTP is transport
 │   │   └── src/                  # plumbing, not authority.
 │   │       ├── main.rs
+│   │       ├── limits.rs         # documented default constraints + unit test
 │   │       ├── conversation.rs   # input context, generation, continuation
 │   │       ├── task.rs           # state machine, leases, fences, retries
 │   │       ├── policy.rs         # grants, revocations, dispatch checks
@@ -30,7 +35,8 @@ microservices.
 ├── gateway/                      # Bun model gateway: untrusted proposals only
 │   ├── package.json              # no DB credential, no workspace mount,
 │   └── src/                      # no execution endpoint
-│       ├── server.ts             # bounded streaming HTTP surface
+│       ├── server.ts             # health-only skeleton until PR-3
+│       ├── server.test.ts
 │       └── providers/            # per-provider adapters behind one contract
 ├── contracts/                    # single source of typed interface contracts
 │   ├── README.md
@@ -45,10 +51,14 @@ microservices.
 ├── deploy/                       # pinned images, minimal Compose, rootless notes
 ├── scripts/
 │   └── validate-phase0.mjs       # documentation/contract consistency check
-├── .gitignore
-├── LICENSE
-└── README.md                     # project entry point
+├── README.md                     # project entry point
 ```
+
+Present as of PR-1: workspace manifests, toolchain pin, both crate skeletons,
+the gateway health skeleton, CI, contracts, docs, feature file, validator and
+LICENSE. Marked empty here for later PRs: `conversation.rs`–`client_protocol.rs`,
+`tools/`, `memory.rs`, `events.rs`, `gateway/src/providers/`, `migrations/`,
+`deploy/`.
 
 ## Layout rules
 
