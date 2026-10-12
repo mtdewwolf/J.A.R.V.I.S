@@ -40,9 +40,17 @@ microservices.
 ├── gateway/                      # Bun model gateway: untrusted proposals only
 │   ├── package.json              # no DB credential, no workspace mount,
 │   └── src/                      # no execution endpoint
-│       ├── server.ts             # health-only skeleton until PR-3
-│       ├── server.test.ts
-│       └── providers/            # per-provider adapters behind one contract
+│       ├── server.ts             # routes: /healthz, POST /v1/inference/stream
+│       ├── streaming.ts          # bounded pump: deadline, output cap, abort
+│       ├── schema.ts             # JSON Schema subset validator (fails loudly)
+│       ├── contracts.ts          # imports contracts/schemas at runtime
+│       ├── types.ts              # typed mirrors of the schemas
+│       ├── providers/
+│       │   ├── index.ts          # registry: provider identity is config
+│       │   ├── fake.ts           # deterministic scenarios (plain/tool/error/stall/flood)
+│       │   ├── anthropic.ts      # Claude Messages SSE adapter (candidate)
+│       │   └── ollama.ts         # Ollama NDJSON adapter (candidate)
+│   └── Dockerfile                # nonroot, no-credential, no-mount image
 ├── contracts/                    # single source of typed interface contracts
 │   ├── README.md
 │   └── schemas/                  # JSON Schema (draft 2020-12) payload files
@@ -60,13 +68,11 @@ microservices.
 ├── README.md                     # project entry point
 ```
 
-Present as of PR-2: workspace manifests, toolchain pin, crate skeletons with the
-durable slice (`store`, `commands`, `events`, `tasks`, `leases`, `recovery`,
-`limits`), `migrations/0001_init.sql`, the gateway health skeleton, CI (with a
-PostgreSQL service job), contracts, docs, feature file, validator and LICENSE.
+Present as of PR-3: everything through PR-2, plus the gateway's bounded
+streaming surface (`server`, `streaming`, `schema`, `contracts`, `types`),
+provider adapters (`providers/`), the nonroot Dockerfile, and 27 gateway tests.
 Marked empty here for later PRs: `conversation.rs`, `policy.rs`, `tools/`,
-`memory.rs`, `event_store.rs`, `client_protocol.rs`,
-`gateway/src/providers/`, `deploy/`.
+`memory.rs`, `event_store.rs`, `client_protocol.rs`, `deploy/`.
 
 ## Layout rules
 

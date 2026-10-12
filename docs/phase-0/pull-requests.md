@@ -52,6 +52,17 @@ the resulting assistant tool access — that requires the phased approval gates 
   and [ADR-0005](../adr/0005-local-transport-candidate.md); deadline enforcement,
   bounded buffers, abort, usage reporting; container with no DB credential, no
   workspace mount, no execution route.
+- **Status:** landed 2026-10-12. 27 gateway tests pass: schema conformance by
+  construction (every emitted event is validated against
+  `contracts/schemas`), deadline abort against a stalling provider, output-cap
+  cutoff of a flooding provider, delta ceiling, client-disconnect abort,
+  refusal of non-conformant provider events, Anthropic/Ollama wire-format
+  mapping from captured frames, and end-to-end SSE through the server.
+  AC-24's isolation half is enforced structurally: zero dependencies (no DB
+  client exists), no `DATABASE_URL`/`postgres://` reference in source, only
+  `/healthz` and `POST /v1/inference/stream` routes. `gateway/Dockerfile`
+  adds the nonroot, no-credential, no-mount container posture. Live provider
+  qualification (AC-29) remains a separate recorded gate.
 - **Out of scope:** provider selection policy, fallback, live qualification
   gates (a live smoke run is recorded separately per
   [technology.md](technology.md)).
