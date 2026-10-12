@@ -5,7 +5,6 @@
 //! documented constraints. The full set is consumed by the policy, tools and
 //! memory modules from PR-2 onward; until then the module is intentionally
 //! referenced only by its unit tests.
-#![allow(dead_code)]
 
 /// Maximum model turns per task.
 pub const MAX_MODEL_TURNS: u32 = 4;

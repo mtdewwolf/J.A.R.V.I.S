@@ -29,6 +29,12 @@ the resulting assistant tool access — that requires the phased approval gates 
   `succeeded`, `failed`, `cancelled`), idempotent command ingestion, generation
   checkpoints, lease takeover with monotonic fencing, and crash-injection tests.
   No model calls yet; the gateway interface is called through an in-process fake.
+- **Status:** landed 2026-10-12. 13 tests pass against real PostgreSQL:
+  command dedup (AC-05), CAS/stale-write rejection, checkpoint round-trip,
+  lease fencing, and the four recovery contracts — AC-17 checkpoint resume,
+  AC-18 dispatched-without-outcome → `waiting_review`, AC-19
+  authorized-not-dispatched → fresh approval, AC-23 outcome pauses for
+  review — each with pre- and post-intent crash simulation.
 - **Out of scope:** HTTP surface, tools, memory semantics.
 - **Exit criteria:** crash-injection suite green: kill -9 across dispatch,
   commit and checkpoint boundaries; restart recovery never duplicates events,
