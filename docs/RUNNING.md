@@ -98,7 +98,20 @@ no shell tool and cannot browse your general home directory.
 The implementation supports owner-configured read-only MCP Streamable HTTP
 connections. No external account is connected by default. Session plugins and
 accounts in T3/ChatGPT do not automatically transfer into this independent bot.
-Create `connections.json` inside the private config directory, mode 0600:
+Create `connections.json` inside the private config directory, mode 0600.
+
+`connections.example.json` in the repository root is a working, verified
+starting point: **GitHub**. It uses GitHub's official remote MCP server
+(`https://api.githubcopilot.com/mcp/`, verified against github/github-mcp-server)
+with a personal access token and a read-only allowlist.
+
+```bash
+cp connections.example.json ~/.config/jarvis/connections.json
+chmod 600 ~/.config/jarvis/connections.json
+# put a fine-grained, read-only PAT in a private file and point token_file at it
+```
+
+Generic shape for a service you configure yourself:
 
 ```json
 [
@@ -128,6 +141,25 @@ Public unauthenticated endpoints may set `token_file` to null. Non-loopback
 endpoints require HTTPS. Config is loaded at startup and cannot be changed by a
 model. The owner reviews and allowlists each tool; server-provided “read-only”
 annotations do not grant authority. Do not label a write tool read-only.
+
+### Status of the five requested services
+
+| Service | Status | What it needs from you |
+| --- | --- | --- |
+| GitHub | **Verified and ready.** Official remote MCP server, PAT bearer auth, read-only allowlist in `connections.example.json`. | A fine-grained read-only PAT in a private file. |
+| Gmail / Google Calendar | **Not connected.** Google publishes no MCP server for these; the registry lists community servers, and those that exist speak stdio or a hosted endpoint. | Choose: run a bridge yourself, or tell me the specific hosted server you accept. |
+| Discord | **Not connected.** No official server. The registry's strongest candidate (`app.lasers.guildcontrol/discord`, read-safe by design) is stdio-only. | Run an HTTP bridge for it on loopback, and a bot token. |
+| Spotify | **Not connected.** Registry results for “spotify” are third-party trend APIs, not your own library; no official server. | Same choice as Gmail. |
+| Home Assistant | **Not connected.** Home Assistant ships an MCP *client* integration, not a control server; community options exist. | Your Home Assistant URL (loopback HTTPS works here) plus a long-lived token. |
+
+Two decisions gate the remaining four, and both are yours, not mine:
+
+1. **Where the bridge runs.** stdio servers need a local HTTP proxy (for example
+   `mcp-proxy`) on loopback, which this core accepts; that keeps credentials and
+   message content on your machine. Hosted remote servers send your data to a
+   third party you would be trusting with it.
+2. **Credentials.** Tell me when each is ready and use the private token-file
+   flow; do not paste tokens into chat.
 
 `/connections` and `/check my_service` inspect configuration and negotiate/list
 MCP tools. Model-proposed `connection.call` shows exact arguments, target service,

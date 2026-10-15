@@ -1,0 +1,99 @@
+[
+  {
+    "id": "github",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "token_file": "REPLACE_WITH_ABSOLUTE_PATH/github-pat",
+    "tools": {
+      "get_me": {
+        "description": "Authenticated GitHub user profile. Read-only; no arguments.",
+        "read_only": true,
+        "schema": { "type": "object", "additionalProperties": false }
+      },
+      "get_file_contents": {
+        "description": "Read a file or directory listing from a repository you can access. Read-only.",
+        "read_only": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "repo", "path"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "repo": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "path": { "type": "string", "minLength": 1, "maxLength": 1024 }
+          }
+        }
+      },
+      "issue_read": {
+        "description": "Read a single issue and its comments. Read-only.",
+        "read_only": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "repo", "issue_number"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "repo": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "issue_number": { "type": "integer", "minimum": 1 },
+            "method": { "type": "string", "enum": ["get", "get_comments"] }
+          }
+        }
+      },
+      "list_dependabot_alerts": {
+        "description": "List Dependabot alerts for a repository. Read-only.",
+        "read_only": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "repo"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "repo": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "state": { "type": "string", "enum": ["auto_dismissed", "dismissed", "fixed", "open"] }
+          }
+        }
+      },
+      "actions_list": {
+        "description": "List GitHub Actions workflows, workflow runs, or jobs in a repository. Read-only.",
+        "read_only": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "repo", "method"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "repo": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "method": { "type": "string", "enum": ["list_workflows", "list_workflow_runs", "list_workflow_jobs", "list_workflow_run_artifacts"] }
+          }
+        }
+      },
+      "get_discussion": {
+        "description": "Read a repository discussion. Read-only.",
+        "read_only": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "repo", "discussionNumber"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "repo": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "discussionNumber": { "type": "integer", "minimum": 1 }
+          }
+        }
+      },
+      "get_discussion_comments": {
+        "description": "Read the comments of a repository discussion. Read-only.",
+        "read_only": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "repo", "discussionNumber"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "repo": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "discussionNumber": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    }
+  }
+]
