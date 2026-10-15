@@ -1,0 +1,1 @@
+ALTER TABLE proposals ADD COLUMN config_digest TEXT NOT NULL DEFAULT '';
