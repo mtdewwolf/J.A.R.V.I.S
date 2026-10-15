@@ -4,6 +4,7 @@
 // Individual models still require qualification; this only proves the
 // transport mapping and cancellation behavior.
 
+import { strictParse } from "../strict-json";
 import type { InferenceProvider, InferenceRequest, RawEvent } from "../types";
 
 export class OllamaProvider implements InferenceProvider {
@@ -53,18 +54,20 @@ export class OllamaProvider implements InferenceProvider {
     let buffer = "";
     for await (const chunk of response.body) {
       buffer += decoder.decode(chunk, { stream: true });
+      if (buffer.length > 131072) throw new Error("provider frame exceeds limit");
       let newline = buffer.indexOf("\n");
       while (newline !== -1) {
         const line = buffer.slice(0, newline).trim();
         buffer = buffer.slice(newline + 1);
         if (line) {
-          const event = ollamaEventFromLine(line);
-          if (event) yield event;
+          for (const event of ollamaEventsFromLine(line)) yield event;
         }
         newline = buffer.indexOf("\n");
       }
       if (signal.aborted) return;
     }
+    buffer += decoder.decode();
+    if (buffer.trim()) for (const event of ollamaEventsFromLine(buffer.trim())) yield event;
   }
 }
 
@@ -72,7 +75,7 @@ export class OllamaProvider implements InferenceProvider {
 export function ollamaEventFromLine(line: string): RawEvent | null {
   let frame: Record<string, unknown>;
   try {
-    frame = JSON.parse(line) as Record<string, unknown>;
+    frame = strictParse(line) as Record<string, unknown>;
   } catch {
     return null;
   }
@@ -113,4 +116,19 @@ export function ollamaEventFromLine(line: string): RawEvent | null {
     };
   }
   return null;
+}
+
+/** Preserve all events when the final NDJSON frame also contains content/tools. */
+export function ollamaEventsFromLine(line:string):RawEvent[] {
+  const frame=strictParse(line) as Record<string,unknown>;
+  const events:RawEvent[]=[];
+  const first=ollamaEventFromLine(line);if(first)events.push(first);
+  const message=frame.message as Record<string,unknown>|undefined;
+  if(first?.type==='content.delta' && Array.isArray(message?.tool_calls) && message.tool_calls.length){
+    const proposal=ollamaEventFromLine(JSON.stringify({...frame,done:false,message:{...message,content:''}}));if(proposal)events.push(proposal);
+  }
+  if(frame.done===true && first?.type!=='completed' && first?.type!=='error'){
+    const completion=ollamaEventFromLine(JSON.stringify({...frame,message:{}}));if(completion)events.push(completion);
+  }
+  return events;
 }

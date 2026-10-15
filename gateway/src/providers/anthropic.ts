@@ -8,6 +8,7 @@
 // gate per docs/phase-0/technology.md; no claim about this provider is made
 // until that runs.
 
+import { strictParse } from "../strict-json";
 import type { InferenceProvider, InferenceRequest, RawEvent } from "../types";
 
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -85,7 +86,7 @@ export class AnthropicProvider implements InferenceProvider {
         content: m.content,
       })),
       tools: request.tools.map((t) => ({
-        name: t.name,
+        name: t.name.replaceAll(".", "_"),
         description: (t.schema as { description?: string }).description ?? "",
         input_schema: t.schema,
       })),
@@ -114,6 +115,10 @@ export class AnthropicProvider implements InferenceProvider {
     // closes; the core must only ever see a complete, schema-valid proposal.
     let toolName: string | null = null;
     let argumentDeltas: string[] = [];
+    let argumentBytes = 0;
+    let initialArguments: unknown = {};
+    let inputTokens = 0;
+    let stopReason = "end_turn";
 
     for await (const frame of sseFrames(response.body)) {
       if (signal.aborted) return;
@@ -123,8 +128,11 @@ export class AnthropicProvider implements InferenceProvider {
       if (type === "content_block_start") {
         const block = (payload as Record<string, unknown>).content_block as Record<string, unknown>;
         if (block?.type === "tool_use") {
-          toolName = String(block.name ?? "");
+          const wireName = String(block.name ?? "");
+          toolName = request.tools.find(t => t.name.replaceAll(".", "_") === wireName)?.name ?? wireName;
           argumentDeltas = [];
+          argumentBytes = 0;
+          initialArguments = block.input ?? {};
         }
         continue;
       }
@@ -132,6 +140,8 @@ export class AnthropicProvider implements InferenceProvider {
         const delta = (payload as Record<string, unknown>).delta as Record<string, unknown>;
         if (delta?.type === "input_json_delta" && typeof delta.partial_json === "string") {
           argumentDeltas.push(delta.partial_json);
+          argumentBytes += delta.partial_json.length;
+          if (argumentBytes > 16384) throw new Error("tool arguments exceed limit");
           continue;
         }
         const event = anthropicEventFromPayload(payload);
@@ -141,9 +151,9 @@ export class AnthropicProvider implements InferenceProvider {
       if (type === "content_block_stop" && toolName) {
         let parsed: unknown = null;
         try {
-          parsed = JSON.parse(argumentDeltas.join("")) as unknown;
+          parsed = argumentDeltas.length ? strictParse(argumentDeltas.join("")) : initialArguments;
         } catch {
-          parsed = null;
+          throw new Error("invalid or duplicate-key tool arguments");
         }
         yield {
           type: "tool_use.proposal",
@@ -154,6 +164,13 @@ export class AnthropicProvider implements InferenceProvider {
         continue;
       }
 
+      if (type === "message_start") inputTokens = Number((payload.message as Record<string, any>)?.usage?.input_tokens ?? 0);
+      if (type === "message_delta") {
+        stopReason = String((payload.delta as Record<string, unknown>)?.stop_reason ?? stopReason);
+        yield { type: "usage", payload: { inputTokens, outputTokens: Number((payload.usage as Record<string,unknown>)?.output_tokens ?? 0) } };
+        continue;
+      }
+      if (type === "message_stop") { yield { type: "completed", payload: { stopReason } }; continue; }
       const event = anthropicEventFromPayload(payload);
       if (event) yield event;
     }
@@ -166,21 +183,22 @@ export async function* sseFrames(body: ReadableStream<Uint8Array>): AsyncGenerat
   let buffer = "";
   for await (const chunk of body) {
     buffer += decoder.decode(chunk, { stream: true });
-    let boundary = buffer.indexOf("\n\n");
-    while (boundary !== -1) {
-      const frame = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
+    if (buffer.length > 131072) throw new Error("provider frame exceeds limit");
+    let boundary = /\r?\n\r?\n/.exec(buffer);
+    while (boundary) {
+      const frame = buffer.slice(0, boundary.index);
+      buffer = buffer.slice(boundary.index + boundary[0].length);
       for (const line of frame.split("\n")) {
         if (!line.startsWith("data:")) continue;
         const data = line.slice(5).trim();
         if (!data || data === "[DONE]") continue;
         try {
-          yield JSON.parse(data) as Record<string, unknown>;
+          yield strictParse(data) as Record<string, unknown>;
         } catch {
-          // A partial or malformed frame is not fatal to the stream.
+          throw new Error("invalid provider JSON frame");
         }
       }
-      boundary = buffer.indexOf("\n\n");
+      boundary = /\r?\n\r?\n/.exec(buffer);
     }
   }
 }

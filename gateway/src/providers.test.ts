@@ -102,3 +102,15 @@ test("ollama NDJSON lines map to neutral events", () => {
   expect(ollamaEventFromLine("not json")).toBeNull();
   expect(ollamaEventFromLine(JSON.stringify({ error: "model missing" }))).toMatchObject({ type: "error" });
 });
+
+test("Ollama final content frame retains completion, and malformed arguments fail closed", async () => {
+  const { ollamaEventsFromLine }=await import("./providers/ollama");
+  expect(ollamaEventsFromLine(JSON.stringify({message:{content:"final text"},done:true,done_reason:"stop"})).map(e=>e.type)).toEqual(["content.delta","completed"]);
+  expect(()=>ollamaEventsFromLine('{"message":{"tool_calls":[]},"done":true,"done":false}')).toThrow();
+});
+test("Anthropic SSE accepts CRLF frame boundaries", async () => {
+  const { sseFrames }=await import("./providers/anthropic");
+  const response=new Response('data: {"type":"ping"}\r\n\r\ndata: {"type":"message_stop"}\r\n\r\n');
+  const frames=[];for await(const frame of sseFrames(response.body!))frames.push(frame.type);
+  expect(frames).toEqual(["ping","message_stop"]);
+});

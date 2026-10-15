@@ -9,6 +9,9 @@
 // The listener binds loopback only; authentication happens in the core before
 // a request reaches here.
 
+import { strictParse } from "./strict-json";
+import { timingSafeEqual } from "node:crypto";
+import { readFileSync, lstatSync } from "node:fs";
 import { validate } from "./schema";
 import { SCHEMAS } from "./contracts";
 import { buildProviders } from "./providers";
@@ -40,7 +43,7 @@ export async function handleInferenceStream(
 ): Promise<Response> {
   let body: unknown;
   try {
-    body = await req.json();
+    body = strictParse(await req.text());
   } catch {
     return jsonError(400, "invalid_json", "request body is not valid JSON");
   }
@@ -57,7 +60,10 @@ export async function handleInferenceStream(
   }
 
   const encoder = new TextEncoder();
-  const clientSignal = (req as { signal?: AbortSignal }).signal;
+  const disconnect = new AbortController();
+  req.signal.addEventListener("abort", () => disconnect.abort(), { once: true });
+  if (req.signal.aborted) disconnect.abort();
+  const clientSignal = disconnect.signal;
   let streamController: ReadableStreamDefaultController<Uint8Array> | null = null;
 
   const stream = new ReadableStream<Uint8Array>({
@@ -65,7 +71,7 @@ export async function handleInferenceStream(
       streamController = controller;
     },
     cancel() {
-      // Client went away: the pump's external-signal wiring stops the provider.
+      disconnect.abort();
     },
   });
 
@@ -113,10 +119,16 @@ function jsonError(
 }
 
 /** Build the fetch handler for a gateway with the given providers. */
-export function makeFetchHandler(providers: Map<string, InferenceProvider>) {
+export function makeFetchHandler(providers: Map<string, InferenceProvider>, token?: string) {
   return async function fetchHandler(req: Request): Promise<Response> {
     const url = new URL(req.url);
     if (req.method === "POST" && url.pathname === "/v1/inference/stream") {
+      if (token) {
+        const a = Buffer.from(req.headers.get("authorization") ?? "");
+        const b = Buffer.from(`Bearer ${token}`);
+        if (a.length !== b.length || !timingSafeEqual(a,b)) return jsonError(401,"unauthorized","gateway authentication required");
+      }
+      if (req.headers.has("origin")) return jsonError(403,"forbidden","browser requests are not allowed");
       return handleInferenceStream(req, providers);
     }
     return handleRequest(req);
@@ -125,11 +137,18 @@ export function makeFetchHandler(providers: Map<string, InferenceProvider>) {
 
 if (import.meta.main) {
   const port = Number(process.env.JARVIS_GATEWAY_PORT ?? 8787);
+  const config = process.env.JARVIS_CONFIG_DIR ?? `${process.env.HOME}/.config/jarvis`;
+  const tokenPath = `${config}/gateway-token`;
+  const meta = lstatSync(tokenPath);
+  if (!meta.isFile() || (meta.mode & 0o077) !== 0 || meta.uid !== process.getuid?.()) throw new Error("gateway token must be owned by this user and mode 0600");
+  const token = readFileSync(tokenPath,"utf8").trim();
+  if (token.length < 32) throw new Error("gateway token is too short");
   const providers = buildProviders(process.env);
   Bun.serve({
     port,
     hostname: "127.0.0.1",
-    fetch: makeFetchHandler(providers),
+    fetch: makeFetchHandler(providers, token),
+    maxRequestBodySize: 256 * 1024,
   });
   const registered = [...providers.keys()].join(", ");
   console.log(

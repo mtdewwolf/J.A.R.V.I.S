@@ -237,5 +237,5 @@ console.log(
     `  contracts:   ${expectedACs.length} acceptance contracts defined and referenced\n` +
     `  features:    initial-slice scenarios tagged and tagged IDs defined\n` +
     `  schemas:     contracts/schemas valid JSON with closed objects\n` +
-    `  note:        documentation check only; no assistant runtime is implemented`,
+    `  note:        documentation check only; runtime behavior is checked by separate tests`,
 );

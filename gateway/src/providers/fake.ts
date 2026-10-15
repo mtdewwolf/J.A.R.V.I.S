@@ -1,18 +1,18 @@
 // Fake provider for deterministic tests and local development.
 //
 // Scenario is chosen by model.name, e.g. provider "fake", name
-// "plain" | "tool" | "error" | "stall" | "flood". No network, no credentials.
+// "plain" | "tool" | "connection" | "error" | "stall" | "flood". No network, no credentials.
 
 import type { InferenceProvider, InferenceRequest, RawEvent } from "../types";
 
-export type FakeScenario = "plain" | "tool" | "error" | "stall" | "flood";
+export type FakeScenario = "plain" | "tool" | "connection" | "error" | "stall" | "flood";
 
-const SCENARIOS: FakeScenario[] = ["plain", "tool", "error", "stall", "flood"];
+const SCENARIOS: FakeScenario[] = ["plain", "tool", "connection", "error", "stall", "flood"];
 
 const TEXT_CHUNKS = [
   "Understood. ",
-  "I read the note you asked about, ",
-  "and here is the bounded summary you requested.",
+  "This is a deterministic demo response, ",
+  "not a live model answer.",
 ];
 
 export function parseScenario(name: string): FakeScenario {
@@ -51,14 +51,19 @@ export class FakeProvider implements InferenceProvider {
         };
         return;
 
+      case "connection":
       case "tool":
+        if (request.messages.some(m => m.role === "tool")) {
+          yield { type: "content.delta", payload: { text: "Demo: received the approved tool result." } };
+          break;
+        }
         yield { type: "content.delta", payload: { text: "I will propose reading the file." } };
         yield {
           type: "tool_use.proposal",
           payload: {
             proposalId: `prp_fake_${generationId.slice(-8)}`,
-            name: request.tools[0]?.name ?? "workspace.read_text",
-            arguments: { path: "notes.txt" },
+            name: scenario === "connection" ? "connection.call" : "workspace.read_text",
+            arguments: scenario === "connection" ? { connection: "fixture", tool: "search", arguments: { query: "notes" } } : { path: "notes.txt" },
           },
         };
         break;

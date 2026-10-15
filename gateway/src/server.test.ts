@@ -143,3 +143,11 @@ test("AC-24 isolation: no database client, no workspace access, no credentials",
   expect(Object.keys(pkg.dependencies ?? {}).length, "no runtime dependencies: no DB driver is possible").toBe(0);
   expect(Object.keys(pkg.devDependencies ?? {}).length).toBe(0);
 });
+
+test("gateway service authentication is required when a token is configured", async () => {
+  const handler=makeFetchHandler(buildProviders({}),"test-gateway-token");
+  const request=()=>new Request("http://127.0.0.1/v1/inference/stream",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(validRequest)});
+  expect((await handler(request())).status).toBe(401);
+  const authorized=request();authorized.headers.set("authorization","Bearer test-gateway-token");
+  expect((await handler(authorized)).status).toBe(200);
+});

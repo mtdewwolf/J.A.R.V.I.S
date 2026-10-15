@@ -96,7 +96,7 @@ pub async fn refresh(
         r#"
         UPDATE leases
         SET expires_at = now() + make_interval(secs => $4::double precision)
-        WHERE lease_name = $1 AND holder = $2 AND fence = $3
+        WHERE lease_name = $1 AND holder = $2 AND fence = $3 AND expires_at > now()
         "#,
     )
     .bind(lease_name)
